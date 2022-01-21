@@ -51,19 +51,25 @@ class PairedDataset(Dataset):
             'target': target
         }
 
+
 class RegressionDataset(Dataset):
-  def __init__(self, df, cfg, tokenizer, text_col, target_col):
+  def __init__(self, df, cfg, tokenizer, text_col, target_col = None):
         self.df = df
         self.cfg = cfg
         self.tokenizer = tokenizer
         self.X = df[text_col].values
-        self.y = df[target_col].values
+        self.target_col = target_col
+        if target_col is not None:
+            self.y = df[target_col].values
 
   def __len__(self):
         return len(self.df)
 
   def __getitem__(self, index):
-        text, target = self.X[index], self.y[index]
+        text = self.X[index]
+        if self.target_col is not None:
+            target = self.y[index]
+
         inputs = self.tokenizer.encode_plus(
             text,
             truncation=True,
@@ -74,8 +80,14 @@ class RegressionDataset(Dataset):
         ids = inputs['input_ids']
         mask = inputs['attention_mask']
         
-        return {
-            'input_ids': ids,
-            'attention_mask': mask,
-            'target': target
-        }
+        if self.target_col is not None:
+            return {
+                'input_ids': ids,
+                'attention_mask': mask,
+                'target': target
+            }
+        else:
+            return {
+                'input_ids': ids,
+                'attention_mask': mask
+            }

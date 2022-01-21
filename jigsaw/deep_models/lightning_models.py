@@ -11,14 +11,15 @@ import torch
 
 
 class RegressionModel(LightningModule):
-  def __init__(self, cfg, train_df, val_df):
+  def __init__(self, cfg, train_df = None, val_df = None, test_df = None):
     super().__init__()
     self.cfg = cfg
     self.train_df = train_df
     self.val_df = val_df
+    self.test_df = test_df
     self.model = JigsawModel(cfg)
-    self.criterion = nn.MSELoss()
-    self.save_hyperparameters(cfg, ignore = ['train_df', 'val_df', 'model', 'criterion'])
+    self.criterion = nn.MSELoss() #L1
+    self.save_hyperparameters(cfg, ignore = ['train_df', 'val_df', 'test_df', 'model', 'criterion'])
     
   def forward(self, input_ids = None, attention_mask = None):
     out = self.model(input_ids = input_ids, attention_mask = attention_mask)
@@ -43,6 +44,16 @@ class RegressionModel(LightningModule):
         self.cfg.tokenizer
     )
     loader = get_paired_loader(val_split, self.cfg.batch_size, shuffle = False)
+    return loader
+
+  def predict_dataloader(self):
+    test_split = RegressionDataset(
+        self.test_df,
+        self.cfg,
+        self.cfg.tokenizer,
+        self.cfg.dataset.text_col
+    )
+    loader = get_regression_loader(test_split, self.cfg.tokenizer, self.cfg.batch_size, shuffle = False)
     return loader
 
   def configure_optimizers(self):
@@ -82,6 +93,10 @@ class RegressionModel(LightningModule):
     acc = (output1 > output2).float().mean()
     return {'loss': loss, 'acc': acc}
 
+  def predict_step(self, batch, batch_idx, dataloader_idx=0):
+    output = self(**batch).squeeze().cpu()
+    return output
+
   def validation_epoch_end(self, outputs):
     avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
     avg_acc = torch.stack([x['acc'] for x in outputs]).mean()
@@ -89,15 +104,17 @@ class RegressionModel(LightningModule):
     self.log('val_loss', avg_loss)
     self.log('val_acc', avg_acc)
 
+
 class PairedModel(LightningModule):
-  def __init__(self, cfg, train_df, val_df):
+  def __init__(self, cfg, train_df = None, val_df = None, test_df = None):
     super().__init__()
     self.cfg = cfg
     self.train_df = train_df
     self.val_df = val_df
+    self.test_df = test_df
     self.model = JigsawModel(cfg)
     self.criterion = nn.MarginRankingLoss(margin=cfg['margin'])
-    self.save_hyperparameters(cfg, ignore = ['train_df', 'val_df', 'model', 'criterion'])
+    self.save_hyperparameters(cfg, ignore = ['train_df', 'val_df', 'test_df', 'model', 'criterion'])
     
   def forward(self, input_ids = None, attention_mask = None):
     out = self.model(input_ids = input_ids, attention_mask = attention_mask)
@@ -119,6 +136,16 @@ class PairedModel(LightningModule):
         self.cfg.tokenizer
     )
     loader = get_paired_loader(val_split, self.cfg.batch_size, shuffle = False)
+    return loader
+
+  def predict_dataloader(self):
+    test_split = RegressionDataset(
+        self.test_df,
+        self.cfg,
+        self.cfg.tokenizer,
+        self.cfg.dataset.text_col
+    )
+    loader = get_regression_loader(test_split, self.cfg.tokenizer, self.cfg.batch_size, shuffle = False)
     return loader
 
   def configure_optimizers(self):
@@ -160,6 +187,10 @@ class PairedModel(LightningModule):
     loss = self.criterion(output1, output2, y)
     acc = (output1 > output2).float().mean()
     return {'loss': loss, 'acc': acc}
+
+  def predict_step(self, batch, batch_idx, dataloader_idx=0):
+    output = self(**batch).squeeze().cpu()
+    return output
 
   def validation_epoch_end(self, outputs):
     avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
