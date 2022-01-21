@@ -33,7 +33,7 @@ class RegressionModel(LightningModule):
           self.cfg.dataset.text_col,
           self.cfg.dataset.target_col
       )
-    loader = get_regression_loader(train_split, self.cfg.batch_size, shuffle=True)
+    loader = get_regression_loader(train_split, self.cfg.tokenizer, self.cfg.batch_size, shuffle=True)
     return loader
 
   def val_dataloader(self):

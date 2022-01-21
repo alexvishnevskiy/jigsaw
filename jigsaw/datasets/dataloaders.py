@@ -1,6 +1,7 @@
 from transformers import DataCollatorWithPadding
 from torch.utils.data import DataLoader
 from collections import defaultdict
+from functools import partial
 import torch
 
 
@@ -50,10 +51,10 @@ def get_paired_loader(dataset, batch_size, shuffle = True):
         num_workers = 4
     )
 
-def get_regression_loader(dataset, batch_size, shuffle = True):
+def get_regression_loader(dataset, tokenizer, batch_size, shuffle = True):
     return DataLoader(
         dataset,
-        collate_fn = collate_regression,
+        collate_fn = partial(collate_regression, tokenizer = tokenizer),
         batch_size = batch_size,
         shuffle = shuffle,
         num_workers = 4
