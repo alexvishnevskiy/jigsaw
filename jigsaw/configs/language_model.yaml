@@ -1,0 +1,41 @@
+seed: 42
+logger': 
+  save_dir: 'models'
+  project: 'Jigsaw'
+  log_model: True
+
+dataset:
+  type: 'regression' #paired, regression
+  name: 'regression_postprocess'
+  more_toxic_col: 'more_toxic'
+  less_toxic_col: 'less_toxic' 
+
+model_name: 'roberta-base'
+output_dir: '.'
+sample_submission: 'data/jigsaw-rate-severity/sample_submission.csv'
+bucket_seq: True
+max_length: 128
+batch_size: 16
+acc_step: 1
+epoch: 5
+num_classes: 1
+margin: 0.5
+
+optimizer:
+  name: 'optim.AdamW'
+  params:
+    lr: 1e-5
+    weight_decay: 1e-5
+
+scheduler:
+  name: 'get_cosine_schedule_with_warmup'
+  params:
+    num_warmup_steps: 0.06
+
+trainer: 
+  gpus: 1
+  auto_lr_find: False
+  progress_bar_refresh_rate: 3
+  fast_dev_run: False
+  num_sanity_val_steps: 2
+  resume_from_checkpoint: None
