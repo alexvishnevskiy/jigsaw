@@ -49,17 +49,17 @@ def get_paired_loader(dataset, batch_size, bucket_seq = True, shuffle = True):
     if bucket_seq:
         max_length1 = find_optimal_lenght(
             dataset.df, dataset.tokenizer, 
-            dataset.more_toxic, dataset.cfg.max_length
+            dataset.cfg.dataset.more_toxic_col, dataset.cfg.max_length
             )
         max_length2 = find_optimal_lenght(
             dataset.df, dataset.tokenizer, 
-            dataset.less_toxic, dataset.cfg.max_length
+            dataset.cfg.dataset.less_toxic_col, dataset.cfg.max_length
             )
 
         sampler = BySequenceLengthPairedSampler(
-            toknizer=dataset.cfg.tokenizer, 
-            text1_col=dataset.more_toxic, 
-            text2_col=dataset.less_toxic, 
+            tokenizer=dataset.cfg.tokenizer, 
+            text1_col=dataset.cfg.dataset.more_toxic_col, 
+            text2_col=dataset.cfg.dataset.less_toxic_col, 
             data_source=dataset.df,
             max_length1=max_length1,
             max_length2=max_length2,
