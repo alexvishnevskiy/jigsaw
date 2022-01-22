@@ -1,4 +1,5 @@
 from torch.utils.data import Dataset
+from ..utils.optimal_lenght import find_optimal_lenght
 
 
 class PairedDataset(Dataset):
@@ -15,6 +16,13 @@ class PairedDataset(Dataset):
         self.tokenizer = tokenizer
         self.more_toxic = df[more_toxic_col].values
         self.less_toxic = df[less_toxic_col].values
+        self.more_toxic_max_lenght = find_optimal_lenght(
+            df, tokenizer, more_toxic_col, cfg.max_length
+            )
+        self.less_toxic_max_lenght = find_optimal_lenght(
+            df, tokenizer, less_toxic_col, cfg.max_length
+            )
+        
         
     def __len__(self):
         return len(self.df)
@@ -25,13 +33,13 @@ class PairedDataset(Dataset):
         inputs_more_toxic = self.tokenizer.encode_plus(
                                 more_toxic,
                                 truncation=True,
-                                max_length=self.cfg.max_length,
+                                max_length=self.more_toxic_max_lenght,
                                 add_special_tokens=True,
                             )
         inputs_less_toxic = self.tokenizer.encode_plus(
                                 less_toxic,
                                 truncation=True,
-                                max_length=self.cfg.max_length,
+                                max_length=self.less_toxic_max_lenght,
                                 add_special_tokens=True,
                             )
         target = 1
@@ -59,6 +67,9 @@ class RegressionDataset(Dataset):
         self.tokenizer = tokenizer
         self.X = df[text_col].values
         self.target_col = target_col
+        self.max_lenght = find_optimal_lenght(
+            df, tokenizer, text_col, cfg.max_length
+            )
         if target_col is not None:
             self.y = df[target_col].values
 
@@ -73,7 +84,7 @@ class RegressionDataset(Dataset):
         inputs = self.tokenizer.encode_plus(
             text,
             truncation=True,
-            max_length=self.cfg.max_length,
+            max_length=self.max_lenght,
             add_special_tokens=True,
             )
         

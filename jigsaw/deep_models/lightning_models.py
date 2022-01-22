@@ -34,7 +34,13 @@ class RegressionModel(LightningModule):
           self.cfg.dataset.text_col,
           self.cfg.dataset.target_col
       )
-    loader = get_regression_loader(train_split, self.cfg.tokenizer, self.cfg.batch_size, shuffle=True)
+    loader = get_regression_loader(
+        train_split,
+        tokenizer=self.cfg.tokenizer, 
+        batch_size=self.cfg.batch_size, 
+        bucket_seq=self.cfg.bucket_seq,
+        shuffle=True
+        )
     return loader
 
   def val_dataloader(self):
@@ -43,7 +49,7 @@ class RegressionModel(LightningModule):
         self.cfg,
         self.cfg.tokenizer
     )
-    loader = get_paired_loader(val_split, self.cfg.batch_size, shuffle = False)
+    loader = get_paired_loader(val_split, self.cfg.batch_size, bucket_seq=False, shuffle=False)
     return loader
 
   def predict_dataloader(self):
@@ -53,12 +59,25 @@ class RegressionModel(LightningModule):
         self.cfg.tokenizer,
         self.cfg.dataset.text_col
     )
-    loader = get_regression_loader(test_split, self.cfg.tokenizer, self.cfg.batch_size, shuffle = False)
+    loader = get_regression_loader(
+        test_split, self.cfg.tokenizer, 
+        self.cfg.batch_size, bucket_seq=False, shuffle = False
+        )
     return loader
+
+  def __apply_weight_decay(self):
+    no_decay = []
+    decay = []
+    for n, p in self.named_parameters():
+        if 'bias' in n and 'LayerNorm' in n:
+            no_decay.append(p)
+        else:
+            decay.append(p)
+    return [{'params': no_decay, 'weight_decay': 0}, {'params': decay}]
 
   def configure_optimizers(self):
     optimizer = eval(self.cfg.optimizer.name)(
-        self.parameters(), **self.cfg.optimizer.params
+        self.__apply_weight_decay(), **self.cfg.optimizer.params
         )
     scheduler = eval(self.cfg.scheduler.name)(
         optimizer,
@@ -126,7 +145,11 @@ class PairedModel(LightningModule):
         self.cfg,
         self.cfg.tokenizer
     )
-    loader = get_paired_loader(train_split, self.cfg.batch_size, shuffle = True)
+    loader = get_paired_loader(
+        train_split, 
+        batch_size=self.cfg.batch_size, 
+        bucket_seq=self.cfg.bucket_seq,
+        shuffle = True)
     return loader
 
   def val_dataloader(self):
@@ -135,7 +158,7 @@ class PairedModel(LightningModule):
         self.cfg,
         self.cfg.tokenizer
     )
-    loader = get_paired_loader(val_split, self.cfg.batch_size, shuffle = False)
+    loader = get_paired_loader(val_split, self.cfg.batch_size, bucket_seq=False, shuffle = False)
     return loader
 
   def predict_dataloader(self):
@@ -145,12 +168,25 @@ class PairedModel(LightningModule):
         self.cfg.tokenizer,
         self.cfg.dataset.text_col
     )
-    loader = get_regression_loader(test_split, self.cfg.tokenizer, self.cfg.batch_size, shuffle = False)
+    loader = get_regression_loader(
+        test_split, self.cfg.tokenizer, 
+        self.cfg.batch_size, bucket_seq=False, shuffle = False
+        )
     return loader
+
+  def __apply_weight_decay(self):
+    no_decay = []
+    decay = []
+    for n, p in self.named_parameters():
+        if 'bias' in n and 'LayerNorm' in n:
+            no_decay.append(p)
+        else:
+            decay.append(p)
+    return [{'params': no_decay, 'weight_decay': 0}, {'params': decay}]
 
   def configure_optimizers(self):
     optimizer = eval(self.cfg.optimizer.name)(
-        self.parameters(), **self.cfg.optimizer.params
+        self.__apply_weight_decay(), **self.cfg.optimizer.params
         )
     scheduler = eval(self.cfg.scheduler.name)(
         optimizer,

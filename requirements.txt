@@ -7,3 +7,5 @@ torchmetrics==0.6.2
 tqdm==4.62.3
 transformers==4.15.0
 wandb==0.12.9
+pytorch-lightning==1.5.9
+python-box==5.4.1
