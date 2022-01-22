@@ -8,6 +8,7 @@ from transformers import get_cosine_schedule_with_warmup
 import torch.optim as optim
 import torch.nn as nn
 import torch
+import math
 
 
 class RegressionModel(LightningModule):
@@ -75,16 +76,18 @@ class RegressionModel(LightningModule):
             decay.append(p)
     return [{'params': no_decay, 'weight_decay': 0}, {'params': decay}]
 
+  def _get_n_steps(self):
+    len_loader = math.ceil(len(self.train_df)/self.cfg.batch_size)
+    num_steps = int(self.cfg.epoch*len_loader/self.cfg.acc_step)
+    return num_steps
+
   def configure_optimizers(self):
     optimizer = eval(self.cfg.optimizer.name)(
         self.__apply_weight_decay(), **self.cfg.optimizer.params
         )
     scheduler = eval(self.cfg.scheduler.name)(
         optimizer,
-        num_training_steps = int(
-            len(self.train_dataloader())*
-            self.cfg.epoch/self.cfg.acc_step
-        ),
+        num_training_steps = self._get_n_steps(),
         **self.cfg.scheduler.params
         )
     
@@ -184,16 +187,18 @@ class PairedModel(LightningModule):
             decay.append(p)
     return [{'params': no_decay, 'weight_decay': 0}, {'params': decay}]
 
+  def _get_n_steps(self):
+    len_loader = math.ceil(len(self.train_df)/self.cfg.batch_size)
+    num_steps = int(self.cfg.epoch*len_loader/self.cfg.acc_step)
+    return num_steps
+
   def configure_optimizers(self):
     optimizer = eval(self.cfg.optimizer.name)(
         self.__apply_weight_decay(), **self.cfg.optimizer.params
         )
     scheduler = eval(self.cfg.scheduler.name)(
         optimizer,
-        num_training_steps = int(
-            len(self.train_dataloader())*
-            self.cfg.epoch/self.cfg.acc_step
-        ),
+        num_training_steps = self._get_n_steps(),
         **self.cfg.scheduler.params
         )
     
