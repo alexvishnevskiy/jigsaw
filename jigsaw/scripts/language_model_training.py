@@ -26,8 +26,10 @@ def train(cfg, train_df, val_df):
     lr_monitor = callbacks.LearningRateMonitor()
     loss_checkpoint = callbacks.ModelCheckpoint(
         dirpath = os.path.join(cfg.logger.save_dir, cfg.model_name, cfg.dataset.name),
-        filename=f"{cfg.model_name}",
+        filename=f"{cfg.model_name}" if cfg.get("fold") is None \
+                 else f"{cfg.model_name}_{cfg.get('fold')}",
         monitor="val_acc",
+        save_weights_only=True,
         save_top_k=1,
         mode="max",
         save_last=False,

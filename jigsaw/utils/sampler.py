@@ -4,7 +4,6 @@ from random import shuffle
 import pandas as pd
 
 
-
 class BySequenceLengthRegressionSampler(Sampler):
     def __init__(self, tokenizer, text_col, data_source, max_length=256, batch_size=64,):
         self.tokenizer = tokenizer
@@ -45,9 +44,13 @@ class BySequenceLengthRegressionSampler(Sampler):
 
         iter_list = []
         for k in data_buckets.keys():
-            np.random.shuffle(data_buckets[k])
-            iter_list += (np.array_split(data_buckets[k]
-                           , int(data_buckets[k].shape[0]/self.batch_size)))
+            try:
+                np.random.shuffle(data_buckets[k])
+                iter_list += (np.array_split(data_buckets[k]
+                            , int(data_buckets[k].shape[0]/self.batch_size)))
+            except:
+                pass
+
         shuffle(iter_list) # shuffle all the batches so they arent ordered by bucket
         # size
         for i in iter_list: 
@@ -123,9 +126,13 @@ class BySequenceLengthPairedSampler(Sampler):
 
         iter_list = []
         for k in data_buckets.keys():
-            np.random.shuffle(data_buckets[k])
-            iter_list += (np.array_split(data_buckets[k]
-                           , int(data_buckets[k].shape[0]/self.batch_size)))
+            try:
+                np.random.shuffle(data_buckets[k])
+                iter_list += (np.array_split(data_buckets[k]
+                            , int(data_buckets[k].shape[0]/self.batch_size)))
+            except:
+                pass
+            
         shuffle(iter_list) # shuffle all the batches so they arent ordered by bucket
         # size
         for i in iter_list: 
