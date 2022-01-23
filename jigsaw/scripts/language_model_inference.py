@@ -4,14 +4,14 @@ import pytorch_lightning as pl
 import torch
 
 
-def predict(cfg, test_df, checkpoint_path):
+def predict(cfg, test_df, checkpoint_path, fold = None):
     if cfg.model_type == 'paired':
       model = PairedModel(cfg, test_df=test_df)
     else:
       model = RegressionModel(cfg, test_df=test_df)
-    model.load_state_dict(torch.load(checkpoint_path))
+    model.load_state_dict(torch.load(checkpoint_path)['state_dict'])
 
-    csv_writer = CsvWritter(cfg)
+    csv_writer = CsvWritter(cfg, fold=fold)
     trainer = pl.Trainer(
       gpus = 1,
       callbacks=[csv_writer],
