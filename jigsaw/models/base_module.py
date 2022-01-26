@@ -1,5 +1,4 @@
 from pytorch_lightning import LightningModule
-from .base_model import JigsawModel
 from ..datasets import (
     RegressionDataset, PairedDataset, 
     get_regression_loader, get_paired_loader
@@ -12,20 +11,15 @@ import math
 
 
 class RegressionModel(LightningModule):
-  def __init__(self, cfg, train_df = None, val_df = None, test_df = None):
+  def __init__(self, cfg, model, train_df = None, val_df = None, test_df = None):
     super().__init__()
     self.cfg = cfg
     self.train_df = train_df
     self.val_df = val_df
     self.test_df = test_df
-    self.model = JigsawModel(cfg)
+    self.model = model
     self.criterion = nn.MSELoss() #L1
     self.save_hyperparameters(cfg, ignore = ['train_df', 'val_df', 'test_df', 'model', 'criterion'])
-    
-  def forward(self, input_ids = None, attention_mask = None):
-    out = self.model(input_ids = input_ids, attention_mask = attention_mask)
-    out = out.squeeze()
-    return out
 
   def train_dataloader(self):
     train_split = RegressionDataset(
@@ -100,27 +94,6 @@ class RegressionModel(LightningModule):
         }
     return [optimizer], [scheduler]
 
-  def training_step(self, batch, batch_idx):
-    y = batch.pop('target')
-    output = self(**batch)
-
-    loss = self.criterion(y, output)
-    self.log('train_loss', loss)
-    return {'loss': loss}
-
-  def validation_step(self, batch, batch_idx):
-    y = batch.pop('target')
-    output1 = self(input_ids = batch['more_toxic_ids'], attention_mask = batch['more_toxic_mask'])
-    output2 = self(input_ids = batch['less_toxic_ids'], attention_mask = batch['less_toxic_mask'])
-
-    loss = nn.MarginRankingLoss(margin = self.cfg['margin'])(output1, output2, y)
-    acc = (output1 > output2).float().mean()
-    return {'loss': loss, 'acc': acc}
-
-  def predict_step(self, batch, batch_idx, dataloader_idx=0):
-    output = self(**batch).squeeze().cpu()
-    return output
-
   def validation_epoch_end(self, outputs):
     avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
     avg_acc = torch.stack([x['acc'] for x in outputs]).mean()
@@ -130,19 +103,15 @@ class RegressionModel(LightningModule):
 
 
 class PairedModel(LightningModule):
-  def __init__(self, cfg, train_df = None, val_df = None, test_df = None):
+  def __init__(self, cfg, model, train_df = None, val_df = None, test_df = None):
     super().__init__()
     self.cfg = cfg
     self.train_df = train_df
     self.val_df = val_df
     self.test_df = test_df
-    self.model = JigsawModel(cfg)
+    self.model = model
     self.criterion = nn.MarginRankingLoss(margin=cfg['margin'])
     self.save_hyperparameters(cfg, ignore = ['train_df', 'val_df', 'test_df', 'model', 'criterion'])
-    
-  def forward(self, input_ids = None, attention_mask = None):
-    out = self.model(input_ids = input_ids, attention_mask = attention_mask)
-    return out
 
   def train_dataloader(self):
     train_split = PairedDataset(
@@ -212,30 +181,6 @@ class PairedModel(LightningModule):
             'frequency': self.cfg.acc_step
         }
     return [optimizer], [scheduler]
-
-  def training_step(self, batch, batch_idx):
-    y = batch.pop('target')
-    output1 = self(input_ids = batch['more_toxic_ids'], attention_mask = batch['more_toxic_mask'])
-    output2 = self(input_ids = batch['less_toxic_ids'], attention_mask = batch['less_toxic_mask'])
-
-    loss = self.criterion(output1, output2, y)
-    acc = (output1 > output2).float().mean()
-    self.log('train_loss', loss)
-    self.log('train_acc', acc)
-    return {'loss': loss, 'acc': acc}
-
-  def validation_step(self, batch, batch_idx):
-    y = batch.pop('target')
-    output1 = self(input_ids = batch['more_toxic_ids'], attention_mask = batch['more_toxic_mask'])
-    output2 = self(input_ids = batch['less_toxic_ids'], attention_mask = batch['less_toxic_mask'])
-
-    loss = self.criterion(output1, output2, y)
-    acc = (output1 > output2).float().mean()
-    return {'loss': loss, 'acc': acc}
-
-  def predict_step(self, batch, batch_idx, dataloader_idx=0):
-    output = self(**batch).squeeze().cpu()
-    return output
 
   def validation_epoch_end(self, outputs):
     avg_loss = torch.stack([x['loss'] for x in outputs]).mean()

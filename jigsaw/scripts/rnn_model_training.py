@@ -1,6 +1,6 @@
 from ..utils.sampler import BySequenceLengthRegressionSampler, BySequenceLengthPairedSampler
 from pytorch_lightning.utilities.seed import seed_everything
-from ..rnn_models.lightning_models import PairedRnnModel, RegressionRnnModel
+from ..models.rnn_models.lightning_models import PairedRnnModel, RegressionRnnModel
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning import callbacks
@@ -25,7 +25,7 @@ def train(cfg, train_df, val_df):
     earystopping = EarlyStopping(monitor="val_acc", patience = 3)
     lr_monitor = callbacks.LearningRateMonitor()
     loss_checkpoint = callbacks.ModelCheckpoint(
-        dirpath = os.path.join(cfg.logger.save_dir, cfg.model_name, cfg.dataset.name),
+        dirpath = os.path.join(cfg.logger.save_dir, cfg.rnn_type, cfg.dataset.name),
         filename=f"{cfg.rnn_type}" if cfg.get("fold") is None \
                  else f"{cfg.rnn_type}_{cfg.get('fold')}",
         monitor="val_acc",
@@ -38,7 +38,7 @@ def train(cfg, train_df, val_df):
         log_model = True,
         )
 
-    wandb.init(project = cfg.logger.project, name = f'{cfg.model_name}_{cfg.dataset.name}')
+    wandb.init(project = cfg.logger.project, name = f'{cfg.rnn_type}_{cfg.dataset.name}')
     wandb.define_metric("val_acc", summary="max")
     wandb.define_metric("val_loss", summary="min")
 
@@ -50,7 +50,6 @@ def train(cfg, train_df, val_df):
             loss_checkpoint, 
             earystopping
             ],
-      deterministic=True,
       precision = 16,
       #because of the sampler
       limit_train_batches = sum(1 for _ in sampler) if cfg.bucket_seq  else len(model.train_dataloader()), 

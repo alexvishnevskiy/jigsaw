@@ -1,19 +1,12 @@
-from ..deep_models.lightning_models import RegressionModel, PairedModel
-from pytorch_lightning import LightningModule
+from cgi import test
+from ..base_module import RegressionModel, PairedModel
 from .base_model import RnnModel
 import torch.nn as nn
 
 
-class RegressionRnnModel(RegressionModel, LightningModule):
+class RegressionRnnModel(RegressionModel):
   def __init__(self, cfg, train_df = None, val_df = None, test_df = None):
-    super(LightningModule, self).__init__()
-    self.cfg = cfg
-    self.train_df = train_df
-    self.val_df = val_df
-    self.test_df = test_df
-    self.model = RnnModel(cfg)
-    self.criterion = nn.MSELoss() #L1
-    self.save_hyperparameters(cfg, ignore = ['train_df', 'val_df', 'test_df', 'model', 'criterion'])
+    super().__init__(cfg, RnnModel(cfg), train_df, val_df, test_df)
 
   def forward(self, input, lengths):
     output = self.model(input, lengths).squeeze()
@@ -45,16 +38,9 @@ class RegressionRnnModel(RegressionModel, LightningModule):
     return output
 
 
-class PairedRnnModel(PairedModel, LightningModule):
+class PairedRnnModel(PairedModel):
   def __init__(self, cfg, train_df = None, val_df = None, test_df = None):
-    super(LightningModule, self).__init__()
-    self.cfg = cfg
-    self.train_df = train_df
-    self.val_df = val_df
-    self.test_df = test_df
-    self.model = RnnModel(cfg)
-    self.criterion = nn.MarginRankingLoss(margin=cfg['margin'])
-    self.save_hyperparameters(cfg, ignore = ['train_df', 'val_df', 'test_df', 'model', 'criterion'])
+    super().__init__(cfg, RnnModel(cfg), train_df, val_df, test_df)
 
   def forward(self, input, lengths):
     output = self.model(input, lengths).squeeze()

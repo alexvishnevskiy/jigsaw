@@ -34,6 +34,8 @@ class RnnModel(nn.Module):
         output, input_sizes = pad_packed_sequence(packed_output, batch_first=True) #(N,L,D*H_out)
         if not self.cfg.output_embeddings:
             #to avoid padding
-            output = output.sum(axis = 1)/torch.Tensor(lengths).unsqueeze(1) #(N, 1, D*H_out)
+            device = next(self.parameters()).device
+            norm_tensor = torch.Tensor(lengths).unsqueeze(1).to(device)
+            output = output.sum(axis = 1)/norm_tensor #(N, 1, D*H_out)
             output = self.fc(output.squeeze())
         return output

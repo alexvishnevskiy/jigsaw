@@ -1,6 +1,6 @@
 from ..utils.sampler import BySequenceLengthRegressionSampler, BySequenceLengthPairedSampler
+from ..models.deep_models.lightning_models import RegressionDeepModel, PairedDeepModel
 from pytorch_lightning.utilities.seed import seed_everything
-from ..deep_models.lightning_models import PairedModel, RegressionModel
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning import callbacks
@@ -14,13 +14,13 @@ def train(cfg, train_df, val_df):
 
     if cfg.dataset.type == 'regression':
         sampler = BySequenceLengthRegressionSampler(cfg.tokenizer, cfg.dataset.text_col, train_df)
-        model = RegressionModel(cfg, train_df, val_df)
+        model = RegressionDeepModel(cfg, train_df, val_df)
     else:
         sampler = BySequenceLengthPairedSampler(
             cfg.tokenizer, cfg.dataset.more_toxic_col, cfg.dataset.less_toxic_col,
             train_df, cfg.max_length, cfg.max_length, cfg.batch_size
             )
-        model = PairedModel(cfg, train_df, val_df)
+        model = PairedDeepModel(cfg, train_df, val_df)
 
     earystopping = EarlyStopping(monitor="val_acc", patience = 3)
     lr_monitor = callbacks.LearningRateMonitor()
@@ -50,7 +50,6 @@ def train(cfg, train_df, val_df):
             loss_checkpoint, 
             earystopping
             ],
-      deterministic=True,
       precision = 16,
       #because of the sampler
       limit_train_batches = sum(1 for _ in sampler) if cfg.bucket_seq  else len(model.train_dataloader()), 

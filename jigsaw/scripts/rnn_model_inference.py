@@ -1,4 +1,4 @@
-from ..rnn_models.lightning_models import RegressionRnnModel, PairedRnnModel
+from ..models.rnn_models.lightning_models import RegressionRnnModel, PairedRnnModel
 from ..utils.callbacks import CsvWritter
 import pytorch_lightning as pl
 import torch
@@ -15,7 +15,6 @@ def predict(cfg, test_df, checkpoint_path, fold = None):
     trainer = pl.Trainer(
       gpus = 1,
       callbacks=[csv_writer],
-      deterministic=True,
       )
     trainer.predict(model)
     print("Prediction's done")
