@@ -32,7 +32,7 @@ class RnnModel(nn.Module):
         packed_input = pack_padded_sequence(embedded_seq_tensor, lengths, enforce_sorted = False, batch_first=True)
         packed_output, (_) = self.model(packed_input)
         output, input_sizes = pad_packed_sequence(packed_output, batch_first=True) #(N,L,D*H_out)
-        if not self.cfg.output_embeddings:
+        if not self.cfg.rnn_embeddings:
             #to avoid padding
             device = next(self.parameters()).device
             norm_tensor = torch.Tensor(lengths).unsqueeze(1).to(device)

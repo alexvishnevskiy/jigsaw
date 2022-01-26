@@ -12,6 +12,7 @@ import os
 def base_train(cfg, model, sampler, save_name, train_df, val_df):
     earystopping = EarlyStopping(monitor="val_acc", patience = 3)
     lr_monitor = callbacks.LearningRateMonitor()
+    summary_callback = callbacks.ModelSummary(max_depth=2)
     loss_checkpoint = callbacks.ModelCheckpoint(
         dirpath = os.path.join(cfg.logger.save_dir, save_name, cfg.dataset.name),
         filename=f"{save_name}" if cfg.get("fold") is None \
@@ -36,7 +37,8 @@ def base_train(cfg, model, sampler, save_name, train_df, val_df):
       callbacks=[
             lr_monitor, 
             loss_checkpoint, 
-            earystopping
+            earystopping,
+            summary_callback
             ],
       precision = 16,
       #because of the sampler
