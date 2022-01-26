@@ -82,13 +82,15 @@ class RegressionModel(LightningModule):
     return num_steps
 
   def configure_optimizers(self):
+    n_steps = self._get_n_steps()
+
     optimizer = eval(self.cfg.optimizer.name)(
         self.__apply_weight_decay(), **self.cfg.optimizer.params
         )
     scheduler = eval(self.cfg.scheduler.name)(
         optimizer,
-        num_training_steps = self._get_n_steps(),
-        **self.cfg.scheduler.params
+        num_training_steps = n_steps,
+        num_warmup_steps = int(self.cfg.scheduler.params.num_warmup_steps*n_steps)
         )
     
     scheduler = {
@@ -193,13 +195,15 @@ class PairedModel(LightningModule):
     return num_steps
 
   def configure_optimizers(self):
+    n_steps = self._get_n_steps()
+
     optimizer = eval(self.cfg.optimizer.name)(
         self.__apply_weight_decay(), **self.cfg.optimizer.params
         )
     scheduler = eval(self.cfg.scheduler.name)(
         optimizer,
-        num_training_steps = self._get_n_steps(),
-        **self.cfg.scheduler.params
+        num_training_steps = n_steps,
+        num_warmup_steps = int(self.cfg.scheduler.params.num_warmup_steps*n_steps),
         )
     
     scheduler = {
