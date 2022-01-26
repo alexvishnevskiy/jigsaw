@@ -13,29 +13,34 @@ class RegressionRnnModel(RegressionModel):
     self.criterion = nn.MSELoss() #L1
     self.save_hyperparameters(cfg, ignore = ['train_df', 'val_df', 'test_df', 'model', 'criterion'])
 
-  def forward(self, x):
-    return
-
-  def train_dataloader(self):
-    return
-
-  def val_dataloader(self):
-    return 
-
-  def predict_dataloader(self):
-    return 
+  def forward(self, input, lengths):
+    output = self.model(input, lengths)
+    return output
 
   def training_step(self, batch, batch_idx):
-    return
+    y = batch.pop('target')
+    lengths = batch['attention_mask'].sum(axis = 1).cpu()
+    output = self(batch['input_ids'], lengths)
+
+    loss = self.criterion(y, output)
+    self.log('train_loss', loss)
+    return {'loss': loss}
 
   def validation_step(self, batch, batch_idx):
-    return
+    y = batch.pop('target')
+    more_toxic_lengths = batch['more_toxic_mask'].sum(axis = 1).cpu()
+    less_toxic_lengths = batch['less_toxic_mask'].sum(axis = 1).cpu()
+    output1 = self(batch['more_toxic_ids'], more_toxic_lengths)
+    output2 = self(batch['less_toxic_ids'], less_toxic_lengths)
+
+    loss = nn.MarginRankingLoss(margin = self.cfg['margin'])(output1, output2, y)
+    acc = (output1 > output2).float().mean()
+    return {'loss': loss, 'acc': acc}
 
   def predict_step(self, batch, batch_idx, dataloader_idx=0):
-    return
-
-  def validation_epoch_end(self, outputs):
-    return
+    lengths = batch['attention_mask'].sum(axis = 1).cpu()
+    output = self(batch['input_ids'], lengths).squeeze().cpu()
+    return output
 
 
 class PairedRnnModel(PairedModel):
@@ -48,26 +53,53 @@ class PairedRnnModel(PairedModel):
     self.criterion = nn.MarginRankingLoss(margin=cfg['margin'])
     self.save_hyperparameters(cfg, ignore = ['train_df', 'val_df', 'test_df', 'model', 'criterion'])
 
-  def forward(self, x):
-    return
-
-  def train_dataloader(self):
-    return
-
-  def val_dataloader(self):
-    return 
-
-  def predict_dataloader(self):
-    return 
+  def forward(self, input, lengths):
+    output = self.model(input, lengths)
+    return output
 
   def training_step(self, batch, batch_idx):
-    return
+    y = batch.pop('target')
+    more_toxic_lengths = batch['more_toxic_mask'].sum(axis = 1).cpu()
+    less_toxic_lengths = batch['less_toxic_mask'].sum(axis = 1).cpu()
+    output1 = self(batch['more_toxic_ids'], more_toxic_lengths)
+    output2 = self(batch['less_toxic_ids'], less_toxic_lengths)
+
+    loss = nn.MarginRankingLoss(margin = self.cfg['margin'])(output1, output2, y)
+    acc = (output1 > output2).float().mean()
+    self.log('train_loss', loss)
+    self.log('train_acc', acc)
+    return {'loss': loss, 'acc': acc}
 
   def validation_step(self, batch, batch_idx):
-    return
+    y = batch.pop('target')
+    more_toxic_lengths = batch['more_toxic_mask'].sum(axis = 1).cpu()
+    less_toxic_lengths = batch['less_toxic_mask'].sum(axis = 1).cpu()
+    output1 = self(batch['more_toxic_ids'], more_toxic_lengths)
+    output2 = self(batch['less_toxic_ids'], less_toxic_lengths)
+
+    loss = nn.MarginRankingLoss(margin = self.cfg['margin'])(output1, output2, y)
+    acc = (output1 > output2).float().mean()
+    return {'loss': loss, 'acc': acc}
 
   def predict_step(self, batch, batch_idx, dataloader_idx=0):
-    return
+    lengths = batch['attention_mask'].sum(axis = 1).cpu()
+    output = self(batch['input_ids'], lengths).squeeze().cpu()
+    return output
 
-  def validation_epoch_end(self, outputs):
-    return
+if __name__ == '__main__':
+    from box import Box
+
+    cfg = {
+        'tokenizer': {'vocab_size': 5},
+        'rnn_type': 'gru',
+        'emb_size': 2,
+        'hidden_size': 2,
+        'num_layers': 1,
+        'bidirectional': False,
+        'num_classes': 1
+    }
+    cfg = Box(cfg)
+    model = RegressionRnnModel(cfg)
+    train_loader = model.train_dataloader()
+    batch = next(iter(train_loader))
+    print(model(batch))
