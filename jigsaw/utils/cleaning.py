@@ -1,3 +1,4 @@
+#script for different preprocessing schemes
 data[col] = data[col].str.replace(r"what's", "what is ")
 data[col] = data[col].str.replace(r"\'ve", " have ")
 data[col] = data[col].str.replace(r"can't", "cannot ")

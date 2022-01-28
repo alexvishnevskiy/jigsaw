@@ -1,4 +1,3 @@
-from unittest.util import _MAX_LENGTH
 from ..utils.sampler import BySequenceLengthRegressionSampler, BySequenceLengthPairedSampler
 from jigsaw.utils.optimal_lenght import find_optimal_lenght
 from transformers import DataCollatorWithPadding
