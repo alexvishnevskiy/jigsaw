@@ -53,7 +53,7 @@ def linear_predict(cfg, test_df, checkpoint_path, fold = None):
     output_path = os.path.join(cfg.output_dir, f'submission_{fold}.csv')
   else:
     output_path = os.path.join(cfg.output_dir, f'submission.csv')
-    
+
   df = pd.read_csv(cfg.sample_submission)
   df['score'] = model.predict(test_df[cfg.dataset.text_col])
   df.to_csv(output_path, index = False)

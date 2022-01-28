@@ -2,8 +2,6 @@ from ..utils.sampler import BySequenceLengthRegressionSampler, BySequenceLengthP
 from pytorch_lightning.utilities.seed import seed_everything
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.loggers import WandbLogger
-from pytorch_lightning import callbacks
-from jigsaw.utils.glove import load_glove
 import pytorch_lightning as pl
 from ..models import *
 import wandb
@@ -12,9 +10,9 @@ import os
 
 def base_train(cfg, model, sampler, save_name, train_df, val_df):
     earystopping = EarlyStopping(monitor="val_acc", patience = 3)
-    lr_monitor = callbacks.LearningRateMonitor()
-    summary_callback = callbacks.ModelSummary(max_depth=2)
-    loss_checkpoint = callbacks.ModelCheckpoint(
+    lr_monitor = pl.callbacks.LearningRateMonitor()
+    summary_callback = pl.callbacks.ModelSummary(max_depth=2)
+    loss_checkpoint = pl.callbacks.ModelCheckpoint(
         dirpath = os.path.join(cfg.logger.save_dir, save_name, cfg.dataset.name),
         filename=f"{save_name}" if cfg.get("fold") is None \
                  else f"{save_name}_{cfg.get('fold')}",

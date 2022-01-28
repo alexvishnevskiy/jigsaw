@@ -1,10 +1,10 @@
-from pytorch_lightning import callbacks
+import pytorch_lightning as pl
 import pandas as pd
 import torch
 import os
 
 
-class CsvWritter(callbacks.BasePredictionWriter):
+class CsvWritter(pl.callbacks.BasePredictionWriter):
   def __init__(self, cfg, fold = None, write_interval='epoch'):
     super().__init__(write_interval)
     self.cfg = cfg
