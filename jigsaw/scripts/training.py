@@ -97,28 +97,24 @@ def cnn_train(cfg, train_df, val_df):
 def linear_train(cfg, train_df, val_df):
     seed_everything(cfg.seed)
 
-    emmbed_dict = load_glove(cfg.emb_path) if cfg.emb_type == 'glove' else None
     if cfg.model_type == 'linear':
         model = LinearModel(
-            cfg, emmbed_dict = emmbed_dict, 
-            alpha=cfg.alpha, random_state=cfg.seed
+            cfg, alpha=cfg.alpha, random_state=cfg.seed
             )
     if cfg.model_type == 'kernel':
         model = KernelModel(
-            cfg, emmbed_dict = emmbed_dict, 
-            alpha=cfg.alpha, kernel=cfg.kernel, 
+            cfg, alpha=cfg.alpha, kernel=cfg.kernel, 
             gamma=cfg.gamma, degree=cfg.degree, 
             random_state=cfg.seed
             )
     if cfg.model_type == 'svr':
         model = SVRModel(
-            cfg, emmbed_dict = emmbed_dict, 
-            kernel=cfg.kernel, degree=cfg.degree,
+            cfg, kernel=cfg.kernel, degree=cfg.degree,
             gamma=cfg.gamma, C=cfg.C,
             random_state=cfg.seed
             )
 
-    wandb.init(project = cfg.project, name = f'{cfg.model_type}_{cfg.dataset.name}')
+    wandb.init(config=cfg, project = cfg.project, name = f'{cfg.model_type}_{cfg.dataset.name}')
     wandb.define_metric("val_acc", summary="max")
     #fit model
     X_train = train_df[cfg.dataset.text_col]
@@ -136,3 +132,4 @@ def linear_train(cfg, train_df, val_df):
     trained_model_artifact.add_dir(save_dir)
     wandb.log_artifact(trained_model_artifact)
     wandb.log({'val_acc': acc})
+    wandb.finish()

@@ -34,12 +34,13 @@ def load_glove(glove_path):
 
     with open(dict_path, 'wb') as f:
         pickle.dump(emmbed_dict, f)
+    return emmbed_dict
 
 def convert_glove_to_features(texts, emmbed_dict):
     def mean_vectorizer(text):
         tokens = word_tokenize(text)
         len_tokens = len(tokens)
-        mean_vector = np.zeros(len(list(emmbed_dict.values())[0]))
+        mean_vector = np.zeros(emb_size)
         
         for token in tokens:
             try:
@@ -50,6 +51,7 @@ def convert_glove_to_features(texts, emmbed_dict):
         mean_vector /= len_tokens
         return mean_vector
 
+    emb_size = len(list(emmbed_dict.values())[0])
     features = tqdm(map(lambda x: mean_vectorizer(x), texts), total=len(texts), desc='converting glove to features')
     features = np.vstack(list(features))
     return features
