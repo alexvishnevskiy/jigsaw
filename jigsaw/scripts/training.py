@@ -3,6 +3,7 @@ from pytorch_lightning.utilities.seed import seed_everything
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning import callbacks
+from jigsaw.utils.glove import load_glove
 import pytorch_lightning as pl
 from ..models import *
 import wandb
@@ -92,3 +93,46 @@ def cnn_train(cfg, train_df, val_df):
     
     model_name = 'cnn_rnn' if cfg.rnn_embeddings else 'cnn'
     base_train(cfg, model, sampler, model_name, train_df, val_df)
+
+def linear_train(cfg, train_df, val_df):
+    seed_everything(cfg.seed)
+
+    emmbed_dict = load_glove(cfg.emb_path) if cfg.emb_type == 'glove' else None
+    if cfg.model_type == 'linear':
+        model = LinearModel(
+            cfg, emmbed_dict = emmbed_dict, 
+            alpha=cfg.alpha, random_state=cfg.seed
+            )
+    if cfg.model_type == 'kernel':
+        model = KernelModel(
+            cfg, emmbed_dict = emmbed_dict, 
+            alpha=cfg.alpha, kernel=cfg.kernel, 
+            gamma=cfg.gamma, degree=cfg.degree, 
+            random_state=cfg.seed
+            )
+    if cfg.model_type == 'svr':
+        model = SVRModel(
+            cfg, emmbed_dict = emmbed_dict, 
+            kernel=cfg.kernel, degree=cfg.degree,
+            gamma=cfg.gamma, C=cfg.C,
+            random_state=cfg.seed
+            )
+
+    wandb.init(project = cfg.project, name = f'{cfg.model_type}_{cfg.dataset.name}')
+    wandb.define_metric("val_acc", summary="max")
+    #fit model
+    X_train = train_df[cfg.dataset.text_col]
+    y_train = train_df[cfg.dataset.target_col]
+    X_more_toxic = val_df['more_toxic']
+    X_less_toxic = val_df['less_toxic']
+
+    model.fit(X_train, y_train)
+    more_toxic_y = model.predict(X_more_toxic)
+    less_toxic_y = model.predict(X_less_toxic)
+    acc = (more_toxic_y > less_toxic_y).mean()
+
+    trained_model_artifact = wandb.Artifact(f'{cfg.model_type}_{cfg.dataset.name}', type=cfg.model_type)
+    save_dir = model.save(cfg.save_path)
+    trained_model_artifact.add_dir(save_dir)
+    wandb.log_artifact(trained_model_artifact)
+    wandb.log({'val_acc': acc})
