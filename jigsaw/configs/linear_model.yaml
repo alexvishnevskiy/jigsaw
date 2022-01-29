@@ -1,0 +1,12 @@
+seed: 42
+emb_type: 'glove' #glove, tfidf, fasttext
+model_type: 'linear' #linear, kernel, svm
+project: 'Jigsaw'
+dataset:
+  name: 'jigsaw-regression'
+  text_col: 'text'
+  target_col: 'y'
+cache_features: True
+alpha: 1
+emb_path: '/Users/alexander/Documents/jigsaw/vectors/glove/glove.twitter.27B.100d.txt'
+save_path: '/Users/alexander/Documents/jigsaw/models/linear/glove.joblib'

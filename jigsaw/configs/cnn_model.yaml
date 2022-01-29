@@ -1,0 +1,33 @@
+seed: 42
+logger:
+  save_dir: 'models'
+  project: 'Jigsaw'
+  log_model: True
+dataset:
+  type: 'regression' #paired, regression
+  name: 'regression_postprocess'
+  text_col: 'text'
+  target_col: 'y'
+model_name: 'roberta-base'
+emb_size: 10
+max_length: 128
+rnn_embeddings: False
+out_channels: 50
+bucket_seq: True
+batch_size: 16
+acc_step: 1
+epoch: 5
+num_classes: 1
+optimizer:
+  name: 'optim.AdamW'
+  params:
+    lr: 1e-5
+    weight_decay: 1e-5
+scheduler:
+  name: 'get_cosine_schedule_with_warmup'
+  params:
+    num_warmup_steps: 0.06
+trainer:
+  gpus: 1
+  progress_bar_refresh_rate: 3
+  num_sanity_val_steps: 2
