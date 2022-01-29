@@ -36,20 +36,20 @@ class RnnModel(nn.Module):
         if self.cfg.emb_type == 'fasttext':
             model = fasttext.load_model(self.cfg.emb_path)
             for w, i in self.cfg.tokenizer.get_vocab().items():
-                vector = torch.from_numpy(model.get_word_vector(w))
                 #copy embedding
+                vector = torch.from_numpy(model.get_word_vector(w))
+                self.embeddings.weight.data[i] = vector
         else:
             emb_dict = load_glove(self.cfg.emb_path)
             for w, i in self.cfg.tokenizer.get_vocab().items():
                 try:
                     vector = emb_dict[w]
-                    #copy embedding
+                    self.embeddings.weight.data[i] = vector
                 except:
                     pass
     
     def freeze_embeddings(self):
-        for p in self.embeddings:
-            p.requires_grad = False
+        self.embeddings.weight.requires_grad = False
 
     def forward(self, x, lengths):
         embedded_seq_tensor = self.embeddings(x)

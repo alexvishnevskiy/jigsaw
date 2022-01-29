@@ -28,21 +28,23 @@ class CnnModel(nn.Module):
     def load_embeddings(self):
         if self.cfg.emb_type == 'fasttext':
             model = fasttext.load_model(self.cfg.emb_path)
+            self.embeddings = nn.Embedding(self.cfg.tokenizer.vocab_size, model.get_dimension())
             for w, i in self.cfg.tokenizer.get_vocab().items():
-                vector = torch.from_numpy(model.get_word_vector(w))
                 #copy embedding
+                vector = torch.from_numpy(model.get_word_vector(w))
+                self.embeddings.weight.data[i] = vector
         else:
             emb_dict = load_glove(self.cfg.emb_path)
+            self.embeddings = nn.Embedding(self.cfg.tokenizer.vocab_size, len(list(emb_dict.values())[0]))
             for w, i in self.cfg.tokenizer.get_vocab().items():
                 try:
                     vector = emb_dict[w]
-                    #copy embedding
+                    self.embeddings.weight.data[i] = vector
                 except:
                     pass
     
     def freeze_embeddings(self):
-        for p in self.embeddings:
-            p.requires_grad = False
+        self.embeddings.weight.requires_grad = False
 
     def forward(self, x, attention_mask):
         if self.cfg.rnn_embeddings:
