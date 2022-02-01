@@ -8,7 +8,7 @@ import wandb
 import os
 
 
-def base_train(cfg, model, sampler, save_name, train_df, val_df):
+def base_train(cfg, model, sampler, save_name, train_df, val_df, callbacks = []):
     earystopping = EarlyStopping(monitor="val_acc", patience = 3)
     lr_monitor = pl.callbacks.LearningRateMonitor()
     summary_callback = pl.callbacks.ModelSummary(max_depth=2)
@@ -37,7 +37,8 @@ def base_train(cfg, model, sampler, save_name, train_df, val_df):
             lr_monitor, 
             loss_checkpoint, 
             earystopping,
-            summary_callback
+            summary_callback,
+            *callbacks
             ],
       precision = 16,
       #because of the sampler
@@ -46,7 +47,7 @@ def base_train(cfg, model, sampler, save_name, train_df, val_df):
       )
     trainer.fit(model)
 
-def deep_train(cfg, train_df, val_df):
+def deep_train(cfg, train_df, val_df, callbacks = []):
     seed_everything(cfg.seed)
 
     if cfg.dataset.type == 'regression':
@@ -62,9 +63,9 @@ def deep_train(cfg, train_df, val_df):
             )
         model = PairedDeepModel(cfg, train_df, val_df)
 
-    base_train(cfg, model, sampler, cfg.model_name, train_df, val_df)
+    base_train(cfg, model, sampler, cfg.model_name, train_df, val_df, callbacks)
     
-def rnn_train(cfg, train_df, val_df):
+def rnn_train(cfg, train_df, val_df, callbacks):
     seed_everything(cfg.seed)
 
     if cfg.dataset.type == 'regression':
@@ -80,9 +81,9 @@ def rnn_train(cfg, train_df, val_df):
             )
         model = PairedRnnModel(cfg, train_df, val_df)
 
-    base_train(cfg, model, sampler, cfg.rnn_type, train_df, val_df)
+    base_train(cfg, model, sampler, cfg.rnn_type, train_df, val_df, callbacks)
 
-def cnn_train(cfg, train_df, val_df):
+def cnn_train(cfg, train_df, val_df, callbacks):
     seed_everything(cfg.seed)
 
     if cfg.dataset.type == 'regression':
@@ -99,7 +100,7 @@ def cnn_train(cfg, train_df, val_df):
         model = PairedCnnModel(cfg, train_df, val_df)
     
     model_name = 'cnn_rnn' if cfg.rnn_embeddings else 'cnn'
-    base_train(cfg, model, sampler, model_name, train_df, val_df)
+    base_train(cfg, model, sampler, model_name, train_df, val_df, callbacks)
 
 def linear_train(cfg, train_df, val_df):
     seed_everything(cfg.seed)

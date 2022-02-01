@@ -30,3 +30,23 @@ class CsvWritter(pl.callbacks.BasePredictionWriter):
         output_path = os.path.join(self.cfg.output_dir, f'submission.csv')
       df.to_csv(output_path, index = False)
       print("prediction's done")
+
+class FeatureExtractorFreezeUnfreeze(pl.callbacks.finetuning.BaseFinetuning):
+  def __init__(self, unfreeze_at_epoch=1):
+    super().__init__()
+    self._unfreeze_at_epoch = unfreeze_at_epoch
+
+  def freeze_before_training(self, pl_module):
+    # freeze any module you want
+    # Here, we are freezing `feature_extractor`
+    self.freeze(pl_module.model.model)
+
+  def finetune_function(self, pl_module, current_epoch, optimizer, optimizer_idx):
+    # When `current_epoch` is 10, feature_extractor will start training.
+    if current_epoch == self._unfreeze_at_epoch:
+      print('unfreezing backbone')
+      self.unfreeze_and_add_param_group(
+        modules=pl_module.model.model,
+        optimizer=optimizer,
+        train_bn=True,
+      )
