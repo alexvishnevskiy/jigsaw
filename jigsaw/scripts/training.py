@@ -141,3 +141,4 @@ def linear_train(cfg, train_df, val_df):
     wandb.log_artifact(trained_model_artifact)
     wandb.log({'val_acc': acc})
     wandb.finish()
+    return acc
