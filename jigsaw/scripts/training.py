@@ -50,7 +50,10 @@ def deep_train(cfg, train_df, val_df):
     seed_everything(cfg.seed)
 
     if cfg.dataset.type == 'regression':
-        sampler = BySequenceLengthRegressionSampler(cfg.tokenizer, cfg.dataset.text_col, train_df)
+        sampler = BySequenceLengthRegressionSampler(
+            cfg.tokenizer, cfg.dataset.text_col, train_df, 
+            max_length=cfg.max_length, batch_size=cfg.batch_size
+            )
         model = RegressionDeepModel(cfg, train_df, val_df)
     else:
         sampler = BySequenceLengthPairedSampler(
@@ -65,7 +68,10 @@ def rnn_train(cfg, train_df, val_df):
     seed_everything(cfg.seed)
 
     if cfg.dataset.type == 'regression':
-        sampler = BySequenceLengthRegressionSampler(cfg.tokenizer, cfg.dataset.text_col, train_df)
+        sampler = BySequenceLengthRegressionSampler(
+            cfg.tokenizer, cfg.dataset.text_col, train_df,
+            max_length=cfg.max_length, batch_size=cfg.batch_size
+            )
         model = RegressionRnnModel(cfg, train_df, val_df)
     else:
         sampler = BySequenceLengthPairedSampler(
@@ -80,7 +86,10 @@ def cnn_train(cfg, train_df, val_df):
     seed_everything(cfg.seed)
 
     if cfg.dataset.type == 'regression':
-        sampler = BySequenceLengthRegressionSampler(cfg.tokenizer, cfg.dataset.text_col, train_df)
+        sampler = BySequenceLengthRegressionSampler(
+            cfg.tokenizer, cfg.dataset.text_col, train_df,
+            max_length=cfg.max_length, batch_size=cfg.batch_size
+            )
         model = RegressionCnnModel(cfg, train_df, val_df)
     else:
         sampler = BySequenceLengthPairedSampler(
