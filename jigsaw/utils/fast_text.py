@@ -1,5 +1,5 @@
 from nltk.tokenize import word_tokenize
-# from .cleaning import *
+from jigsaw.utils.cleaning import *
 from tqdm.notebook import tqdm
 from typing import Union
 import pandas as pd
@@ -18,6 +18,10 @@ def train_fasttext(save_dir, train_path: Union[list, str], lr=0.05, dim=100, ws=
 
         for col in train_df.columns:
             if train_df[col].dtype == 'object' or train_df[col].dtype == 'string':
+                train_df[col] = preprocess_from_kaggle(train_df, col)
+                train_df[col] = preprocess_slang_sub(train_df, col)
+                train_df[col] = remove_punctuation(train_df, col)
+                train_df[col] = links_removing(train_df, col)
                 text += '\n'.join(train_df[col].values.tolist())
         return text
 
@@ -62,3 +66,19 @@ def convert_fasttext_to_features(texts, model_path, tokenizer=None):
         )
     features = np.vstack(list(features))
     return features
+
+
+if __name__ == '__main__':
+    import argparse
+    
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--save_dir", required=True)
+    parser.add_argument("--train_path", required=True)
+    parser.add_argument("--lr", required=False, type = float, default=0.05)
+    parser.add_argument("--dim", required=False, type = int, default=100)
+    parser.add_argument("--ws", required=False, type = int,  default=5)
+    parser.add_argument("--epoch", required=False, type = int, default=10)
+
+    args = parser.parse_args()
+    args = vars(args)
+    train_fasttext(**args)

@@ -1,5 +1,5 @@
 from transformers import AutoTokenizer
-from utils.tokenizer import Tokenizer
+from jigsaw.utils.tokenizer import Tokenizer
 from box import Box
 import yaml
 

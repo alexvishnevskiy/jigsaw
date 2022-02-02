@@ -2,11 +2,13 @@ from datetime import date
 import re
 from nltk.corpus import stopwords
 from nltk.stem.snowball import SnowballStemmer
+from tqdm import tqdm
 from bs4 import BeautifulSoup
 import emoji
 import string
 import spacy
 import nltk
+tqdm.pandas()
 nltk.download('stopwords')
 
 
@@ -19,12 +21,12 @@ def remove_stopwords(data, col):
 
 def lemmatize(data, col):
     nlp = spacy.load('en_core_web_sm')
-    data[col] = data[col].apply(lambda x: " ".join([token.lemma_ for token in nlp(x)]))
+    data[col] = data[col].progress_apply(lambda x: " ".join([token.lemma_ for token in nlp(x)]))
     return data[col]
 
 def stem_preprocess(data, col):
     stemmer = SnowballStemmer(language='english')
-    data[col] = data[col].apply(lambda x: " ".join([stemmer.stem(w) for w in x.split()]))
+    data[col] = data[col].progress_apply(lambda x: " ".join([stemmer.stem(w) for w in x.split()]))
     return data[col]
 
 def preprocess_from_kaggle(data, col):
@@ -51,8 +53,6 @@ def preprocess_slang_sub(data, col):
     data[col] = data[col].str.replace(r"\'ll", " will ")
     data[col] = data[col].str.replace(r"\'scuse", " excuse ")
     data[col] = data[col].str.replace(r"\'s", " ")
-    data[col] = data[col].str.replace(r"u", "you")
-    data[col] = data[col].str.replace(r"idk", "I dont know")
     return data[col]
 
 def remove_duplicates(data, col):
@@ -61,7 +61,7 @@ def remove_duplicates(data, col):
         [ulist.append(x) for x in l if x not in ulist]
         return ulist
 
-    data[col] = data[col].apply(lambda x: ' '.join(unique_list(x.split())))
+    data[col] = data[col].progress_apply(lambda x: ' '.join(unique_list(x.split())))
     return data[col]
 
 def remove_punctuation(data, col):
@@ -84,5 +84,5 @@ def links_removing(data, col):
         text = text.strip() # remove spaces at the beginning and at the end of string
         return text
 
-    data[col] = data[col].apply(lambda x: text_cleaning(x))
+    data[col] = data[col].progress_apply(lambda x: text_cleaning(x))
     return data[col]

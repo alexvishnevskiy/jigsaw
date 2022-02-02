@@ -8,13 +8,13 @@ import wandb
 import os
 
 
-def base_train(cfg, model, sampler, save_name, train_df, val_df, callbacks = []):
+def base_train(cfg, model, sampler, save_name, checkpoint_args = [], callbacks = []):
     earystopping = EarlyStopping(monitor="val_acc", patience = 3)
     lr_monitor = pl.callbacks.LearningRateMonitor()
     summary_callback = pl.callbacks.ModelSummary(max_depth=2)
     loss_checkpoint = pl.callbacks.ModelCheckpoint(
         dirpath = os.path.join(cfg.logger.save_dir, save_name, cfg.dataset.name),
-        filename=f"{save_name}" if cfg.get("fold") is None \
+        filename=f"{save_name}_{'_'.join(checkpoint_args)}" if cfg.get("fold") is None \
                  else f"{save_name}_{cfg.get('fold')}",
         monitor="val_acc",
         save_weights_only=True,
@@ -26,7 +26,7 @@ def base_train(cfg, model, sampler, save_name, train_df, val_df, callbacks = [])
         log_model = True,
         )
 
-    wandb.init(project = cfg.logger.project, name = f'{save_name}_{cfg.dataset.name}')
+    wandb.init(project = cfg.logger.project, name = f"{save_name}_{'_'.join(checkpoint_args)}_{cfg.dataset.name}")
     wandb.define_metric("val_acc", summary="max")
     wandb.define_metric("val_loss", summary="min")
 
@@ -47,7 +47,7 @@ def base_train(cfg, model, sampler, save_name, train_df, val_df, callbacks = [])
       )
     trainer.fit(model)
 
-def deep_train(cfg, train_df, val_df, callbacks = []):
+def deep_train(cfg, train_df, val_df, checkpoint_args = [], callbacks = []):
     seed_everything(cfg.seed)
 
     if cfg.dataset.type == 'regression':
@@ -63,9 +63,9 @@ def deep_train(cfg, train_df, val_df, callbacks = []):
             )
         model = PairedDeepModel(cfg, train_df, val_df)
 
-    base_train(cfg, model, sampler, cfg.model_name, train_df, val_df, callbacks)
+    base_train(cfg, model, sampler, cfg.model_name, checkpoint_args, callbacks)
     
-def rnn_train(cfg, train_df, val_df, callbacks):
+def rnn_train(cfg, train_df, val_df, checkpoint_args = [], callbacks = []):
     seed_everything(cfg.seed)
 
     if cfg.dataset.type == 'regression':
@@ -81,9 +81,9 @@ def rnn_train(cfg, train_df, val_df, callbacks):
             )
         model = PairedRnnModel(cfg, train_df, val_df)
 
-    base_train(cfg, model, sampler, cfg.rnn_type, train_df, val_df, callbacks)
+    base_train(cfg, model, sampler, cfg.rnn_type, checkpoint_args, callbacks)
 
-def cnn_train(cfg, train_df, val_df, callbacks):
+def cnn_train(cfg, train_df, val_df, checkpoint_args = [], callbacks = []):
     seed_everything(cfg.seed)
 
     if cfg.dataset.type == 'regression':
@@ -100,9 +100,9 @@ def cnn_train(cfg, train_df, val_df, callbacks):
         model = PairedCnnModel(cfg, train_df, val_df)
     
     model_name = 'cnn_rnn' if cfg.rnn_embeddings else 'cnn'
-    base_train(cfg, model, sampler, model_name, train_df, val_df, callbacks)
+    base_train(cfg, model, sampler, model_name, checkpoint_args, callbacks)
 
-def linear_train(cfg, train_df, val_df):
+def linear_train(cfg, train_df, val_df, checkpoint_args = []):
     seed_everything(cfg.seed)
 
     if cfg.model_type == 'linear':
@@ -112,17 +112,15 @@ def linear_train(cfg, train_df, val_df):
     if cfg.model_type == 'kernel':
         model = KernelModel(
             cfg, alpha=cfg.alpha, kernel=cfg.kernel, 
-            gamma=cfg.gamma, degree=cfg.degree, 
-            random_state=cfg.seed
+            gamma=cfg.gamma, degree=cfg.degree
             )
     if cfg.model_type == 'svr':
         model = SVRModel(
             cfg, kernel=cfg.kernel, degree=cfg.degree,
-            gamma=cfg.gamma, C=cfg.C,
-            random_state=cfg.seed
+            gamma=cfg.gamma, C=cfg.C
             )
 
-    wandb.init(config=cfg, project = cfg.project, name = f'{cfg.model_type}_{cfg.dataset.name}')
+    wandb.init(config=cfg, project = cfg.project, name = f"{cfg.model_type}_{'_'.join(checkpoint_args)}_{cfg.dataset.name}")
     wandb.define_metric("val_acc", summary="max")
     #fit model
     X_train = train_df[cfg.dataset.text_col]
@@ -135,7 +133,7 @@ def linear_train(cfg, train_df, val_df):
     less_toxic_y = model.predict(X_less_toxic)
     acc = (more_toxic_y > less_toxic_y).mean()
 
-    trained_model_artifact = wandb.Artifact(f'{cfg.model_type}_{cfg.dataset.name}', type=cfg.model_type)
+    trained_model_artifact = wandb.Artifact(f"{cfg.model_type}_{'_'.join(checkpoint_args)}_{cfg.dataset.name}", type=cfg.model_type)
     save_dir = model.save(cfg.save_path)
     trained_model_artifact.add_dir(save_dir)
     wandb.log_artifact(trained_model_artifact)

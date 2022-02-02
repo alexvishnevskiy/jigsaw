@@ -89,6 +89,7 @@ class BaseModel(BaseEstimator):
     def load(self, path):
         path = Path(path)
         cls = joblib.load(path)
+        #add feature: loading from folder
         try:
             tfidf_path = path.with_name(f"{path.stem}-tfidf.joblib")
             cls.vectorizer = joblib.load(tfidf_path)
