@@ -37,7 +37,7 @@ class Tokenizer:
     def fit(self, df, n_tokens=50_000):
         all_tokens = []
         for col in df.columns:
-            if df[col].dtype == 'object' or df[col].dtype == 'string':
+            if df[col].dtype == 'object':
                 tokens = df[col].apply(lambda x: word_tokenize(x)).values.tolist()
                 for tok in tokens:
                     all_tokens.extend(tok)

@@ -10,13 +10,14 @@ class RnnModel(nn.Module):
         super(RnnModel, self).__init__()
         self.cfg = cfg
         #add initialize from pretrained embeddings
+        self.emb_size = cfg.emb_size
         self.embeddings = nn.Embedding(cfg.tokenizer.vocab_size, cfg.emb_size)
         if cfg.load_embeddings: self.load_embeddings()
         if cfg.freeze_embeddings: self.freeze_embeddings()
 
         if cfg.rnn_type == 'gru':
             self.model = nn.GRU(
-                input_size=cfg.emb_size, 
+                input_size=self.emb_size, 
                 hidden_size=cfg.hidden_size,
                 num_layers=cfg.num_layers,
                 batch_first=True,
@@ -24,7 +25,7 @@ class RnnModel(nn.Module):
             )
         else:
             self.model = nn.LSTM(
-                input_size=cfg.emb_size, 
+                input_size=self.emb_size, 
                 hidden_size=cfg.hidden_size,
                 num_layers=cfg.num_layers,
                 batch_first=True,
@@ -35,12 +36,16 @@ class RnnModel(nn.Module):
     def load_embeddings(self):
         if self.cfg.emb_type == 'fasttext':
             model = fasttext.load_model(self.cfg.emb_path)
+            self.emb_size = model.get_dimension()
+            self.embeddings = nn.Embedding(self.cfg.tokenizer.vocab_size, self.emb_size)
             for w, i in self.cfg.tokenizer.get_vocab().items():
                 #copy embedding
                 vector = torch.from_numpy(model.get_word_vector(w))
                 self.embeddings.weight.data[i] = vector
         else:
             emb_dict = load_glove(self.cfg.emb_path)
+            self.emb_size = len(list(emb_dict.values())[0])
+            self.embeddings = nn.Embedding(self.cfg.tokenizer.vocab_size, self.emb_size)
             for w, i in self.cfg.tokenizer.get_vocab().items():
                 try:
                     vector = emb_dict[w]

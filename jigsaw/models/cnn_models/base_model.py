@@ -9,6 +9,7 @@ class CnnModel(nn.Module):
     def __init__(self, cfg):
         super(CnnModel, self).__init__()
         self.cfg = cfg
+        self.emb_size = cfg.emb_size
         if cfg.rnn_embeddings:
             self.embeddings = RnnModel(cfg)
         else:
@@ -19,7 +20,7 @@ class CnnModel(nn.Module):
 
         self.conv1ds = nn.ModuleList([
             nn.Sequential(*[
-                nn.Conv1d(in_channels = cfg.emb_size, out_channels = cfg.out_channels, kernel_size=k),
+                nn.Conv1d(in_channels = self.emb_size, out_channels = cfg.out_channels, kernel_size=k),
                 nn.GELU()
              ]) for k in range(3, 6)
             ])
@@ -28,14 +29,16 @@ class CnnModel(nn.Module):
     def load_embeddings(self):
         if self.cfg.emb_type == 'fasttext':
             model = fasttext.load_model(self.cfg.emb_path)
-            self.embeddings = nn.Embedding(self.cfg.tokenizer.vocab_size, model.get_dimension())
+            self.emb_size = model.get_dimension()
+            self.embeddings = nn.Embedding(self.cfg.tokenizer.vocab_size, self.emb_size)
             for w, i in self.cfg.tokenizer.get_vocab().items():
                 #copy embedding
                 vector = torch.from_numpy(model.get_word_vector(w))
                 self.embeddings.weight.data[i] = vector
         else:
             emb_dict = load_glove(self.cfg.emb_path)
-            self.embeddings = nn.Embedding(self.cfg.tokenizer.vocab_size, len(list(emb_dict.values())[0]))
+            self.emb_size = len(list(emb_dict.values())[0])
+            self.embeddings = nn.Embedding(self.cfg.tokenizer.vocab_size, self.emb_size)
             for w, i in self.cfg.tokenizer.get_vocab().items():
                 try:
                     vector = emb_dict[w]

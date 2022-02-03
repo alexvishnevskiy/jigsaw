@@ -69,7 +69,7 @@ def get_paired_loader(dataset, batch_size, bucket_seq = True, shuffle = True):
             batch_size=1,
             batch_sampler=sampler, 
             collate_fn=collate_paired,
-            num_workers=4
+            num_workers=8
             )
     else:
         return DataLoader(
@@ -77,7 +77,7 @@ def get_paired_loader(dataset, batch_size, bucket_seq = True, shuffle = True):
             collate_fn = collate_paired,
             batch_size = batch_size,
             shuffle = shuffle,
-            num_workers = 4
+            num_workers = 8
         )
 
 def get_regression_loader(dataset, tokenizer, batch_size, bucket_seq = True, shuffle = True):
@@ -99,7 +99,7 @@ def get_regression_loader(dataset, tokenizer, batch_size, bucket_seq = True, shu
             batch_size=1,
             batch_sampler=sampler, 
             collate_fn=partial(collate_regression, tokenizer = tokenizer),
-            num_workers=4
+            num_workers=8
             )
     else:
         return DataLoader(
@@ -107,5 +107,5 @@ def get_regression_loader(dataset, tokenizer, batch_size, bucket_seq = True, shu
             collate_fn = partial(collate_regression, tokenizer = tokenizer),
             batch_size = batch_size,
             shuffle = shuffle,
-            num_workers = 4
+            num_workers = 8
         )
