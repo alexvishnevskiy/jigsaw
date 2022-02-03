@@ -8,7 +8,7 @@ import wandb
 import os
 
 
-def base_train(cfg, model, sampler, save_name, checkpoint_args = [], callbacks = []):
+def base_train(cfg, model, sampler, save_name, checkpoint_args = [], callbacks = [], **kwargs):
     earystopping = EarlyStopping(monitor="val_acc", patience = 3)
     lr_monitor = pl.callbacks.LearningRateMonitor()
     summary_callback = pl.callbacks.ModelSummary(max_depth=2)
@@ -42,12 +42,13 @@ def base_train(cfg, model, sampler, save_name, checkpoint_args = [], callbacks =
             ],
       precision = 16,
       #because of the sampler
-      limit_train_batches = sum(1 for _ in sampler) if cfg.bucket_seq  else len(model.train_dataloader()), 
+      limit_train_batches = kwargs.get('limit_train_batches') if kwargs.get('limit_train_batches') is not None else \
+                            sum(1 for _ in sampler) if cfg.bucket_seq  else len(model.train_dataloader()), 
       **cfg.trainer,
       )
     trainer.fit(model)
 
-def deep_train(cfg, train_df, val_df, checkpoint_args = [], callbacks = []):
+def deep_train(cfg, train_df, val_df, checkpoint_args = [], callbacks = [], **kwargs):
     seed_everything(cfg.seed)
 
     if cfg.dataset.type == 'regression':
@@ -63,9 +64,9 @@ def deep_train(cfg, train_df, val_df, checkpoint_args = [], callbacks = []):
             )
         model = PairedDeepModel(cfg, train_df, val_df)
 
-    base_train(cfg, model, sampler, cfg.model_name, checkpoint_args, callbacks)
+    base_train(cfg, model, sampler, cfg.model_name, checkpoint_args, callbacks, **kwargs)
     
-def rnn_train(cfg, train_df, val_df, checkpoint_args = [], callbacks = []):
+def rnn_train(cfg, train_df, val_df, checkpoint_args = [], callbacks = [], **kwargs):
     seed_everything(cfg.seed)
 
     if cfg.dataset.type == 'regression':
@@ -81,9 +82,9 @@ def rnn_train(cfg, train_df, val_df, checkpoint_args = [], callbacks = []):
             )
         model = PairedRnnModel(cfg, train_df, val_df)
 
-    base_train(cfg, model, sampler, cfg.rnn_type, checkpoint_args, callbacks)
+    base_train(cfg, model, sampler, cfg.rnn_type, checkpoint_args, callbacks, **kwargs)
 
-def cnn_train(cfg, train_df, val_df, checkpoint_args = [], callbacks = []):
+def cnn_train(cfg, train_df, val_df, checkpoint_args = [], callbacks = [], **kwargs):
     seed_everything(cfg.seed)
 
     if cfg.dataset.type == 'regression':
@@ -100,7 +101,7 @@ def cnn_train(cfg, train_df, val_df, checkpoint_args = [], callbacks = []):
         model = PairedCnnModel(cfg, train_df, val_df)
     
     model_name = 'cnn_rnn' if cfg.rnn_embeddings else 'cnn'
-    base_train(cfg, model, sampler, model_name, checkpoint_args, callbacks)
+    base_train(cfg, model, sampler, model_name, checkpoint_args, callbacks, **kwargs)
 
 def linear_train(cfg, train_df, val_df, checkpoint_args = []):
     seed_everything(cfg.seed)
