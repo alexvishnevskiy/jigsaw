@@ -86,3 +86,15 @@ def links_removing(data, col):
 
     data[col] = data[col].progress_apply(lambda x: text_cleaning(x))
     return data[col]
+
+def replaceMultiToxicWords(text):
+    text = re.sub(r'(fuckfuck)','fuck fuck ',text)
+    text = re.sub(r'(f+)( *)([u|*|_]+)( *)([c|*|_]+)( *)(k)+','fuck',text)
+    text = re.sub(r'(h+)(a+)(h+)(a+)','ha ha ',text)
+    text = re.sub(r'(s+ *h+ *[i|!]+ *t+)','shit',text)
+    text = re.sub(r'\b(n+)(i+)(g+)(a+)\b','nigga',text)
+    text = re.sub(r'\b(n+)([i|!]+)(g+)(e+)(r+)\b','nigger',text)
+    text = re.sub(r'\b(d+)(o+)(u+)(c+)(h+)(e+)( *)(b+)(a+)(g+)\b','douchebag',text)
+    text = re.sub(r'([a|@][$|s][s|$])','ass',text)
+    text = re.sub(r'(\bfuk\b)','fuck',text)
+    return text

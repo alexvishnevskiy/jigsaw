@@ -128,7 +128,7 @@ class PairedModel(LightningModule):
 
   def val_dataloader(self):
     val_split = PairedDataset(
-        self.train_df, 
+        self.val_df, 
         self.cfg,
         self.cfg.tokenizer
     )

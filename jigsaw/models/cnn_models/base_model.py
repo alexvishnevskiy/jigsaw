@@ -22,7 +22,7 @@ class CnnModel(nn.Module):
             nn.Sequential(*[
                 nn.Conv1d(in_channels = self.emb_size, out_channels = cfg.out_channels, kernel_size=k),
                 nn.GELU()
-             ]) for k in range(3, 6)
+             ]) for k in range(2, 6)
             ])
         self.fc = nn.LazyLinear(cfg.num_classes)
 
