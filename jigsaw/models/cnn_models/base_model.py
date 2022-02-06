@@ -10,8 +10,11 @@ class CnnModel(nn.Module):
         super(CnnModel, self).__init__()
         self.cfg = cfg
         self.emb_size = cfg.emb_size
-        if cfg.rnn_embeddings:
+        if cfg.rnn_embeddings: 
             self.embeddings = RnnModel(cfg)
+            if cfg.get('rnn_model_path') is not None:
+                self.embeddings.load_state_dict(torch.load(cfg.rnn_model_path)['state_dict'])
+                self.emb_size = (self.embeddings.model.bidirectional+1)*self.embeddings.model.hidden_size
         else:
             self.embeddings = nn.Embedding(cfg.tokenizer.vocab_size, cfg.emb_size)
             if cfg.load_embeddings: self.load_embeddings()
@@ -47,7 +50,8 @@ class CnnModel(nn.Module):
                     pass
     
     def freeze_embeddings(self):
-        self.embeddings.weight.requires_grad = False
+        for p in self.embeddings.parameters():
+            p.requires_grad = False
 
     def forward(self, x, attention_mask):
         if self.cfg.rnn_embeddings:
