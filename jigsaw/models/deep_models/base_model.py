@@ -15,7 +15,12 @@ class JigsawModel(nn.Module):
                          output_attentions=True
                          )
         #добавить карту аттеншн
-        outputs = self.fc(out.pooler_output)
+        try:
+            output = out.pooler_output # (batch_size, hidden_size)
+        except:
+            output = out.last_hidden_state #(batch_size, sequence_length, hidden_size)
+            output = output.mean(1).squeeze()
+        outputs = self.fc(output)
         return outputs
 
     def freeze_backbone(self):
